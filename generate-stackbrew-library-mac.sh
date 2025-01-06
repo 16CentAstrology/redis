@@ -1,4 +1,10 @@
-#!/usr/bin/env bash
+#!/opt/homebrew/bin/bash
+
+## You need to perform the following steps before executing this script:
+## 1. Install a newer version of bash: `brew install bash`.
+## 2. Install additional packages: `brew install coreutils gawk`.
+## 3. Ensure that you have `bashbrew` built and in your PATH.
+
 set -Eeuo pipefail
 
 declare -A aliases=(
@@ -6,8 +12,8 @@ declare -A aliases=(
 	[6.2]='6'
 )
 
-self="$(basename "$BASH_SOURCE")"
-cd "$(dirname "$(readlink -f "$BASH_SOURCE")")"
+self="$(basename "$0")"
+cd "$(dirname "$(greadlink -f "$0")")"
 
 if [ "$#" -eq 0 ]; then
 	versions="$(jq -r 'keys | map(@sh) | join(" ")' versions.json)"
@@ -29,7 +35,7 @@ dirCommit() {
 		cd "$dir"
 		fileCommit \
 			Dockerfile \
-			$(git show HEAD:./Dockerfile | awk '
+			$(git show HEAD:./Dockerfile | gawk '
 				toupper($1) == "COPY" {
 					for (i = 2; i < NF; i++) {
 						print $i
@@ -44,7 +50,7 @@ getArches() {
 	local officialImagesUrl='https://github.com/docker-library/official-images/raw/master/library/'
 
 	eval "declare -g -A parentRepoToArches=( $(
-		find -name 'Dockerfile' -exec awk '
+		find . -name 'Dockerfile' -exec gawk '
 				toupper($1) == "FROM" && $2 !~ /^('"$repo"'|scratch|.*\/.*)(:|$)/ {
 					print "'"$officialImagesUrl"'" $2
 				}
@@ -98,7 +104,7 @@ for version; do
 			variantAliases=( "${variantAliases[@]//latest-/}" )
 		fi
 
-		parent="$(awk 'toupper($1) == "FROM" { print $2 }' "$dir/Dockerfile")"
+		parent="$(gawk 'toupper($1) == "FROM" { print $2 }' "$dir/Dockerfile")"
 		arches="${parentRepoToArches[$parent]}"
 
 		suite="${parent#*:}" # "bookworm-slim", "bookworm"
